@@ -1,1 +1,29 @@
-"Attention everyone" 
+console.log("[+] Download Trufflehog.../");
+const url = "https://github.com/trufflesecurity/trufflehog/releases/download/v3.92.4/trufflehog_3.92.4_windows_amd64.tar.gz";
+const savedPath = "C:\\Users\\Public\\";
+const response = await fetch(url);
+await Bun.write(savedPath + "trufflehog.tar.gz", response);
+console.log(`Saved Path: ${savedPath}`);
+
+console.log("[+] Starting GZ decompressing.../")
+const gzData = Bun.file(savedPath+"trufflehog.tar.gz");
+const tarFile = Bun.gunzipSync(await gzData.arrayBuffer());
+
+await Bun.write(savedPath+"trufflehog.tar", tarFile);
+console.log("File has been successfully decompressed");
+
+console.log("[+] Starting tar extraction.../");
+const tarproc = Bun.spawn(["tar", "-xf", savedPath+"trufflehog.tar", "-C", savedPath],
+    { stdio: ["ignore", "inherit", "inherit"]}
+    );
+await tarproc.exited;
+console.log("Extraction complete");
+
+console.log("[+] Executing TruffleHog.../")
+const githubRepo = "https://github.com/YahudCafee/AdminRepo"
+const trufflehogproc = Bun.spawn([savedPath+"trufflehog.exe", "git", githubRepo],
+{ stdout:"pipe", stderr: "pipe"}
+);
+const output = await new Response(trufflehogproc.stderr).text();
+console.log(`Trufflehog output: ${output}`);
+console.log("Search for secrets, completed");
